@@ -9,8 +9,10 @@ Back in 2020, I was interested in setting up automated trading systems for crypt
 **Limitations**:
 - There are gaps in the price data, since this was just exploratory I wrote the code to assume that every 60 entries was an hour even there are gaps (since it is over such a long timeframe, I don't imagine the end result would be dramatically different, but it is well worth looking into if you are seriously planning to run this kind of strategy)
 - Does not factor in exchange fees (although the lower trading volume shouldn't affect the result against baseline too much here)
+- There is a large, sudden drop in price (flash-crash) in 2013 that is highly skewing the mean reversion data (see here:)
 
 **Future Directions**: 
+- Removing flash-crash incidents
 - Does performance improve if you add the ability to short-sell? 
 - Adding data from 2019 to 2023 (present day)
 - Running on different cryptocurrency coins (and altcoins)
