@@ -2,14 +2,15 @@
 Back in 2020, I was interested in setting up automated trading systems for cryptocurrency. To start, I explored how well trend following and mean reversion strategies could perform on cryptocurrency trading and wrote these backtesting notebooks. Here, I took 1 minute bitcoin data from 2013 through 2019 and wrote both a simple moving average (SMA) crossover system and a mean reversion system to see how well it would perform. Afterwards, I did a crude optimization to find the best parameters by re-running the algorithms 100 times with random parameters to see how well they affected the returns. 
   
 **Results**:
-- It seemed that the SMA crossover strategy had overall higher performance than the mean reversion strategy. 
-- When trying out 100 random parameter backtests, only 1 of the mean reversion backtests had higher cumulative returns higher than baseline buy & hold strategy compared to 32 for the SMA crossover strategy. 
-- Across the 100 backtests, the highest cumulative return for each strategy was 8,037.5% for mean reversion and 19,477.7% for SMA crossover compared to 7,640.4% for buy and hold. 
+- When trying out 100 random parameter backtests, 77 of the mean reversion backtests had higher cumulative returns higher than baseline buy & hold strategy compared to 32 for the SMA crossover strategy. 
+- Across the 100 backtests, the highest cumulative return for each strategy was 860,972.1% for mean reversion and 19,477.7% for SMA crossover compared to 7,640.4% for buy and hold. 
 
 **Limitations**:
 - There are gaps in the price data, since this was just exploratory I wrote the code to assume that every 60 entries was an hour even there are gaps (since it is over such a long timeframe, I don't imagine the end result would be dramatically different, but it is well worth looking into if you are seriously planning to run this kind of strategy)
 - Does not factor in exchange fees (although the lower trading volume shouldn't affect the result against baseline too much here)
-- There is a large, sudden drop in price (flash-crash) in 2013 that is highly skewing the mean reversion data (see here:)
+- There is a large, sudden drop in price (flash-crash) in 2013 that is highly skewing the mean reversion data (see this log-scale plot:)
+
+![plot](/images/comparison_log_plot.png)
 
 **Future Directions**: 
 - Removing flash-crash incidents
