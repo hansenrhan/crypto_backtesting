@@ -8,8 +8,7 @@ Back in 2020, I was interested in setting up automated trading systems for crypt
 **Limitations**:
 - There are gaps in the price data, since this was just exploratory I wrote the code to assume that every 60 entries was an hour even there are gaps (since it is over such a long timeframe, I don't imagine the end result would be dramatically different, but it is well worth looking into if you are seriously planning to run this kind of strategy)
 - Does not factor in exchange fees (although the lower trading volume shouldn't affect the result against baseline too much here)
-- There is a large, sudden drop in price (flash-crash) in 2013 that is highly skewing the mean reversion data (see this log-scale plot:)
-
+- I ended up removing data from 2013 since there was a flash crash incident that was heavily skewing the mean reversion strategies to buy the crash and hold for the remaining 6 years (see this log-scale plot:)
 ![plot](/images/comparison_log_plot.png)
 
 **Future Directions**: 
@@ -22,8 +21,8 @@ Back in 2020, I was interested in setting up automated trading systems for crypt
 - Reduce overfitting (or understand how much overfitting is occuring) when searching for the best parameters by using cross validation
 
 ### Contents
-- **simple_moving_average_analysis.ipynb** : trend following backtest 
-- **mean_reversion_analysis.ipynb** : mean reversion backtest
+- **simple_moving_average_analysis.ipynb** : trend following backtests 
+- **mean_reversion_analysis.ipynb** : mean reversion backtests
 - comparison.ipynb: creating a comparison plot between the two and their highest performing parameters
 - BTC_1min_bitfinex/ : 1 minute BTC price data from 2013 to 2019
 - sma_optimization_results_100_runs.csv : results of 100 backtests using the SMA crossover strategy with different moving averages
