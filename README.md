@@ -15,7 +15,7 @@ The results showed that both trend following and mean reversion strategies outpe
 ![plot](/images/comparison_plot_2014_2023.png)
 
 ## Limitations
-It is important to note that there are gaps in the price data and that the code does not factor in exchange fees. Additionally, there may be overfitting when searching for the best parameters.
+It is important to note that there are gaps in the price data. Additionally, there may be overfitting when searching for the best parameters.
 
 Even though I had data from 2013, I ended up removing the data since there was a flash crash incident that was heavily skewing the mean reversion strategies to buy the crash and hold for the remaining 6 years (see images/comparison_log_plot.png)
 
