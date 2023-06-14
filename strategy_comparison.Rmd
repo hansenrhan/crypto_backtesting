@@ -1,0 +1,64 @@
+---
+title: "crypto_strategy_comparison"
+author: "Hansen Han"
+date: "2023-06-02"
+output: html_document
+---
+
+
+The goal of this is to compare the results of optimization runs from various trading strategies.
+
+# Load Libraries
+```{r}
+library(tidyverse)
+library(magrittr)
+```
+
+# Load Data
+```{r}
+sma_regular <- read_csv("sma_optimization_2014_2023_results_100_runs.csv")
+sma_regular$strategy <- "SMA Crossover (Normal)"
+sma_shorting <- read_csv("sma_shorting_optimization_2014_2023_results_100_runs.csv")
+sma_shorting$strategy <- "SMA Crossover (w/ Shorting)"
+mr_regular <- read_csv("mean_reversion_optimization_2014_2023_results_100_runs.csv")
+mr_regular$strategy <- "Mean Reversion (Normal)"
+mr_shorting <- read_csv("mean_reversion_optimization_shorting_2014_2023_results_100_runs.csv")
+mr_shorting$strategy <- "Mean Reversion (w/ Shorting)"
+
+#combine all datasets
+all_data <- sma_regular %>% full_join(sma_shorting) %>% full_join(mr_regular) %>% full_join(mr_shorting)
+all_data
+```
+
+```{r}
+p1 <- all_data %>% ggplot(aes(x = strategy, y = cumulative_return*100, color=strategy)) + geom_boxplot() + geom_jitter() + theme_bw() + xlab("") + ylab("Cumulative Return (%)") + theme(legend.position = "none") + scale_y_log10() + coord_cartesian(ylim = c(0.01, 100000)) +
+  geom_hline(yintercept = 3224.857, color = "red", size = 1, alpha = 0.5)
+
+p2 <- all_data %>% ggplot(aes(x = strategy, y = cumulative_return*100, color=strategy)) + geom_boxplot() + geom_jitter() + theme_bw() + xlab("") + ylab("Cumulative Return (%)") + theme(legend.position = "none") +
+  geom_hline(yintercept = 3224.857, color = "red", size = 1, alpha = 0.5)
+```
+
+# Analysis
+
+## Run a regression model for SMA crossover to see what the relationship is between the features and returns
+```{r}
+sma_crossover_regression_data <- all_data %>% filter(strategy %in% c("SMA Crossover (Normal)", "SMA Crossover (w/ Shorting)"))
+
+# Perform regression analysis
+model <- lm(cumulative_return ~ ma1_length*ma2_length + strategy, data = sma_crossover_regression_data)
+
+# Display the summary of the regression model
+summary(model)
+```
+
+## Mean Reversion
+```{r}
+mean_reversion_regression_data <- all_data %>% filter(strategy %in% c("Mean Reversion (Normal)", "Mean Reversion (w/ Shorting)"))
+
+# Perform regression analysis
+model <- lm(cumulative_return ~ ma + buy_threshold + take_profit_threshold + strategy, data = mean_reversion_regression_data)
+
+# Display the summary of the regression model
+summary(model)
+```
+
