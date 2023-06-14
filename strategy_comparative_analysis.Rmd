@@ -84,6 +84,7 @@ all_data %<>% select(-`...1`, -stdev_return_rate, -sharpe_ratio)
 
 ### How do the differert strategies compare 
 ```{r}
+#log scale
 p1 <- all_data %>% mutate(shorting = case_when(
     shorting == FALSE ~ "Regular",
     shorting == TRUE ~ "Shorting Allowed"
@@ -94,6 +95,8 @@ p1 <- all_data %>% mutate(shorting = case_when(
   geom_hline(yintercept = 3224.857, color = "red", size = 1, alpha = 0.5) + facet_grid(~ strategy + fees) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
 p1 
+
+
 ```
 
 What percent of each run beat buy & hold? 
