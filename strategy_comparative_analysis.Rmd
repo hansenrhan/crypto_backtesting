@@ -1,0 +1,288 @@
+---
+title: "Cryptocurrency Strategy Comparison"
+author: "Hansen Han"
+date: "2023-06-08"
+output: html_document
+---
+
+The goal of this analysis is to compare mean reversion and trend following strategies that have shorting/no shorting and fees/no fees to see what factors affect returns and see if any are viable for potential trading.
+
+## Load Libraries
+```{r}
+library(tidyverse)
+library(magrittr)
+```
+
+## Load Data
+```{r}
+df1 <- read_csv("run_output/mean_reversion_no_shorting_no_fee.csv")
+df1$strategy <- "Mean Reversion"
+df1$shorting <- FALSE
+df1$fees <- FALSE
+
+df2 <- read_csv("run_output/mean_reversion_no_shorting_with_fee.csv")
+df2$strategy <- "Mean Reversion"
+df2$shorting <- FALSE
+df2$fees <- TRUE
+
+df3 <- read_csv("run_output/mean_reversion_shorting_no_fee.csv")
+df3$strategy <- "Mean Reversion"
+df3$shorting <- TRUE
+df3$fees <- FALSE
+
+df4 <- read_csv("run_output/mean_reversion_shorting_with_fee.csv")
+df4$strategy <- "Mean Reversion"
+df4$shorting <- TRUE
+df4$fees <- TRUE
+
+df5 <- read_csv("run_output/sma_crossover_no_shorting_no_fee.csv")
+df5$strategy <- "SMA Crossover"
+df5$shorting <- FALSE
+df5$fees <- FALSE
+
+df6 <- read_csv("run_output/sma_crossover_no_shorting_with_fee.csv")
+df6$strategy <- "SMA Crossover"
+df6$shorting <- FALSE
+df6$fees <- TRUE
+
+df7 <- read_csv("run_output/sma_crossover_shorting_no_fee.csv")
+df7$strategy <- "SMA Crossover"
+df7$shorting <- TRUE
+df7$fees <- FALSE
+
+df8 <- read_csv("run_output/sma_crossover_shorting_with_fee.csv")
+df8$strategy <- "SMA Crossover"
+df8$shorting <- TRUE
+df8$fees <- TRUE
+
+#combine all datasets
+all_data <- df1 %>% full_join(df2) %>% full_join(df3) %>% full_join(df4) %>% full_join(df5) %>% full_join(df6) %>% full_join(df7) %>% full_join(df8)
+all_data
+```
+
+Create some labels for the run types
+```{r}
+all_data %<>% mutate(shorting_label = case_when(
+  shorting %in% c(FALSE) ~ "Regular",
+  shorting %in% c(TRUE) ~ "Shorting"
+)) %>% mutate(fee_label = case_when(
+  fees %in% c(FALSE) ~ "No-Fee",
+  fees %in% c(TRUE) ~ "Fees"
+)) %>% mutate(run_type = paste0(strategy, "_", shorting_label, "_", fee_label)) %>% select(-shorting_label, -fee_label)
+
+all_data
+```
+
+Drop columns w/o data
+```{r}
+all_data %<>% select(-`...1`, -stdev_return_rate, -sharpe_ratio)
+```
+
+
+## Analysis
+
+
+### How do the differert strategies compare 
+```{r}
+p1 <- all_data %>% mutate(shorting = case_when(
+    shorting == FALSE ~ "Regular",
+    shorting == TRUE ~ "Shorting Allowed"
+  )) %>% mutate(fees = case_when(
+    fees == FALSE ~ "No Fees",
+    fees == TRUE ~ "Volume-Based Fees"
+  )) %>% ggplot(aes(x = shorting, y = cumulative_return*100, color=shorting)) + geom_boxplot(outlier.shape = NA) + geom_jitter(size=0.5) + theme_bw() + xlab("") + ylab("Cumulative Return (%)") + theme(legend.position = "none") + scale_y_log10() + coord_cartesian(ylim = c(0.01, 100000)) +
+  geom_hline(yintercept = 3224.857, color = "red", size = 1, alpha = 0.5) + facet_grid(~ strategy + fees) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+p1 
+```
+
+What percent of each run beat buy & hold? 
+```{r}
+count_greater_than_threshold <- all_data %>%
+  group_by(run_type, strategy, shorting, fees) %>%
+  summarise(count = sum(cumulative_return > 32.24857)) %>% mutate(shorting = case_when(
+    shorting == FALSE ~ "Regular",
+    shorting == TRUE ~ "Shorting Allowed"
+  )) %>% mutate(fees = case_when(
+    fees == FALSE ~ "No Fees",
+    fees == TRUE ~ "Volume-Based Fees"
+  ))
+
+
+p2 <- ggplot(count_greater_than_threshold, aes(x = shorting, y = count)) +
+  geom_bar(stat = "identity", alpha = 0.6, aes(fill = ifelse(count > 50, "green", "red"))) +
+  labs(x = "", y = "% of Runs that Beat Buy & Hold", title = "") +
+  coord_cartesian(ylim = c(0, 100)) +
+  theme_bw() +
+  geom_hline(yintercept = 50, color = "grey", size = 1, alpha = 0.5) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") +
+  scale_fill_manual(values = c("red" = "red", "green" = "green")) + facet_grid(~ strategy + fees)
+
+p2
+```
+
+
+## Run a regression model for SMA crossover to see what the relationship is between the features and returns
+
+### With Fees
+```{r}
+sma_crossover_regression_data <- all_data %>% filter(strategy %in% c("SMA Crossover")) %>% filter(fees == TRUE)
+
+# Perform regression analysis
+model <- lm(cumulative_return ~ total_trades + shorting, data = sma_crossover_regression_data)
+
+# Display the summary of the regression model
+summary(model)
+```
+### W/o Fees
+
+```{r}
+sma_crossover_regression_data <- all_data %>% filter(strategy %in% c("SMA Crossover")) %>% filter(fees == FALSE)
+
+# Perform regression analysis
+model <- lm(cumulative_return ~ total_trades + shorting, data = sma_crossover_regression_data)
+
+# Display the summary of the regression model
+summary(model)
+```
+
+### Consistently profitable strategies that also outperform B&H that are tradable in NY (no shorting, has fees)?
+
+There are 35 quarters, so the highest strategy which was profitable 22/35 quarters is about 62% profitable. 
+```{r}
+all_data$greater_than_threshold <- ifelse(all_data$cumulative_return > 32.24857, 1, 0)
+
+tradeable_winning_strategies <- all_data %>% arrange(desc(profitable_quarters)) %>% filter(greater_than_threshold == 1) %>% filter(fees == TRUE) %>% filter(shorting == FALSE) %>% arrange(desc(profitable_quarters))
+
+tradeable_losing_strategies <- all_data %>% arrange(desc(profitable_quarters)) %>% filter(greater_than_threshold == 0) %>% filter(fees == TRUE) %>% filter(shorting == FALSE)
+
+```
+
+
+### Compare them to one another across different parameters
+
+
+#### Mean Reversion
+```{r}
+plot_function <- function(all_data, y_col, y_label, scale_log = FALSE) {
+  library(ggpubr)
+  
+  data_processed <- all_data %>%
+    filter(strategy == "Mean Reversion", fees == TRUE) %>%
+    mutate(
+      run_label = case_when(
+        greater_than_threshold == 0 ~ "Underperforms",
+        greater_than_threshold == 1 ~ "Outperforms"
+      ),
+      shorting = case_when(
+        shorting == TRUE ~ "Shorting Allowed",
+        shorting == FALSE ~ "Regular"
+      )
+    )
+  
+  plot <- data_processed %>%
+    ggplot(aes(x = run_label, y = !!sym(y_col), color = run_label)) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(size = 0.5) +
+    theme_bw() +
+    xlab("Performance vs. Buy & Hold") +
+    ylab(y_label) +
+    theme(legend.position = "none") +
+    ggtitle(y_label) +
+    stat_compare_means(comparisons = list(c("Underperforms", "Outperforms"))) +
+    facet_grid(~ shorting)
+  
+  if (scale_log) {
+    plot <- plot + scale_y_log10()
+  }
+  
+  return(plot)
+}
+
+# Now you can use this function for any column in your dataset
+
+p3 <- plot_function(all_data, "buy_threshold", "Buy Threshold")
+p4 <- plot_function(all_data, "take_profit_threshold", "Take Profit Threshold")
+p5 <- plot_function(all_data, "stop_loss_threshold", "Stop Loss Threshold")
+p6 <- plot_function(all_data, "ma", "Moving Average Length (hours)")
+p7 <- plot_function(all_data, "mean_trades_per_quarter", "Median Trades Per Quarter", scale_log = TRUE)
+p8 <- plot_function(all_data, "total_trades", "Total Trades", scale_log = TRUE)
+
+p3
+p4
+p5
+p6
+p7
+p8
+```
+
+```{r}
+library(patchwork)
+# Combine the plots using patchwork
+combined_plot <- p3 + p5 + p6 + p7 + p8
+
+# Display the combined plot
+combined_plot
+```
+
+
+#### SMA Crossover
+```{r}
+plot_function <- function(all_data, y_col, y_label, scale_log = FALSE) {
+  library(ggpubr)
+  
+  data_processed <- all_data %>%
+    filter(strategy == "SMA Crossover", fees == TRUE) %>%
+    mutate(
+      run_label = case_when(
+        greater_than_threshold == 0 ~ "Underperforms",
+        greater_than_threshold == 1 ~ "Outperforms"
+      ),
+      shorting = case_when(
+        shorting == TRUE ~ "Shorting Allowed",
+        shorting == FALSE ~ "Regular"
+      )
+    )
+  
+  plot <- data_processed %>%
+    ggplot(aes(x = run_label, y = !!sym(y_col), color = run_label)) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(size = 0.5) +
+    theme_bw() +
+    xlab("Performance vs. Buy & Hold") +
+    ylab(y_label) +
+    theme(legend.position = "none") +
+    ggtitle(y_label) +
+    stat_compare_means(comparisons = list(c("Underperforms", "Outperforms"))) +
+    facet_grid(~ shorting)
+  
+  if (scale_log) {
+    plot <- plot + scale_y_log10()
+  }
+  
+  return(plot)
+}
+
+# Now you can use this function for any column in your dataset
+
+p9 <- plot_function(all_data, "ma1_length", "Short Moving Average Length (MA1)")
+p10 <- plot_function(all_data, "ma2_length", "Long Moving Average Length (MA2)")
+p11 <- plot_function(all_data, "mean_trades_per_quarter", "Median Trades Per Quarter", scale_log = TRUE)
+p12 <- plot_function(all_data, "total_trades", "Total Trades", scale_log = TRUE)
+
+p9
+p10
+p11
+p12
+```
+
+
+```{r}
+library(patchwork)
+# Combine the plots using patchwork
+combined_plot <- p9 + p10 + p11 +p12
+
+# Display the combined plot
+combined_plot
+```
+
