@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import statistics 
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
 
 def merge_and_convert_to_hourly(minute_data, hourly_data):
     # Convert timestamp column to datetime format
@@ -1059,6 +1060,8 @@ def run_multiple_backtests(shorting_allowed, num_runs, fixed_fee, crypto_df, str
 
 
         optimization_results = pd.DataFrame(result_dict)
+    else:
+        raise Exception("Error:", strategy, "is not valid, please select either 'simple moving average' or 'mean reversion'.")
 
         
         
