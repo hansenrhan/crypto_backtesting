@@ -37,8 +37,9 @@ https://github.com/hansenrhan/crypto_trader
 In this repository, I created mean reversion and trend following bots so I could live trade cryptocurrency on the coinbase exchange using the parameters identified in the analysis in this repository. This repository includes code and instructions for setting up and running the trading bots.
 
 ## Contents
-- simple_moving_average_analysis.ipynb: trend following backtests  
-- mean_reversion_analysis.ipynb: mean reversion backtests
+- crypto_backtesting.py: logic for backtesting, plotting, helper functions
+- simple_moving_average_analysis.ipynb: trend following backtesting analysis
+- mean_reversion_analysis.ipynb: mean reversion backtesting analysis
 - BTC_1min_bitfinex/: 1 minute BTC price data from 2013 to 2023
 - strategy_comparison.Rmd: R markdown analysis comparing output from backtests
 - strategy_comparative_analysis.html: R markdown analysis output
